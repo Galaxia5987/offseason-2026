@@ -32,6 +32,9 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Setup Gradle and caching
+        uses: gradle/actions/setup-gradle@v6
+
       # Run Gradle commands
       - name: Check that the code builds
         run: ./gradlew compileKotlin compileJava
