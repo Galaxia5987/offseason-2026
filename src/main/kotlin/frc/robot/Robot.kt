@@ -105,7 +105,6 @@ object Robot : LoggedRobot() {
             "ResetByVision",
             DriveCommands.resetByPoseEstimation().ignoringDisable(true)
         )
-        println("Checking CI!")
     }
 
     /**
