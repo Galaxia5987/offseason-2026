@@ -34,19 +34,13 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.InitializerKt;
-import frc.robot.RobotContainer;
-import frc.robot.field.FieldTriggersKt;
 import frc.robot.lib.*;
-import frc.robot.states.setpoints_manager.SetpointsManager;
-import frc.robot.subsystems.shooter.hood.Hood;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
-import org.littletonrobotics.junction.Logger;
 
 public class DriveCommands {
     private static final Drive drive = InitializerKt.getDrive();
@@ -143,14 +137,6 @@ public class DriveCommands {
 
                     double maxSpeed = drive.getMaxLinearSpeedMetersPerSec();
                     double maxAngularSpeed = drive.getMaxAngularSpeedRadPerSec();
-                    if (SetpointsManager.INSTANCE.isShootingOnMove().getAsBoolean()
-                            && FieldTriggersKt.getInAllianceZone().getAsBoolean()
-                            && !Objects.requireNonNull(RobotContainer.INSTANCE.getShooting())
-                                    .getDontShootTrigger()
-                                    .getAsBoolean()) {
-                        maxSpeed = 2.0;
-                        maxAngularSpeed = 3.14;
-                    }
 
                     // Convert to field relative speeds & send command
                     ChassisSpeeds speeds =
@@ -202,42 +188,10 @@ public class DriveCommands {
                             double maxSpeed = drive.getMaxLinearSpeedMetersPerSec();
                             double maxAngularSpeed = drive.getMaxAngularSpeedRadPerSec();
 
-                            if (SetpointsManager.INSTANCE.isShootingOnMove().getAsBoolean()
-                                    && FieldTriggersKt.getInAllianceZone().getAsBoolean()
-                                    && !Objects.requireNonNull(
-                                                    RobotContainer.INSTANCE.getShooting())
-                                            .getDontShootTrigger()
-                                            .getAsBoolean()) {
-                                maxSpeed = 2.0;
-                                maxAngularSpeed = 3.14;
-                            }
+                            omega = MathUtil.applyDeadband(omegaSupplier.getAsDouble(), DEADBAND);
 
-                            if (!Hood.INSTANCE.getShouldCrouch().getAsBoolean()) {
-                                omega =
-                                        MathUtil.applyDeadband(
-                                                omegaSupplier.getAsDouble(), DEADBAND);
-
-                                // Square rotation value for more precise control
-                                omega = Math.copySign(omega * omega, omega) * maxAngularSpeed;
-                            } else {
-                                var setpoint = rotationSupplier.get();
-                                var currentRotationRadians = drive.getRotation().getRadians();
-
-                                Logger.recordOutput("trenchAlignment/rotationSetpoint", setpoint);
-
-                                if (setpoint != lastRotationSetpoint) {
-                                    angleController.reset(currentRotationRadians);
-                                    lastRotationSetpoint = setpoint;
-                                }
-
-                                double pidOutput =
-                                        angleController.calculate(
-                                                currentRotationRadians, setpoint.getRadians());
-                                omega =
-                                        MathUtil.applyDeadband(
-                                                pidOutput,
-                                                DegreesPerSecond.of(2.0).in(RadiansPerSecond));
-                            }
+                            // Square rotation value for more precise control
+                            omega = Math.copySign(omega * omega, omega) * maxAngularSpeed;
                             // Convert to field relative speeds & send command
                             ChassisSpeeds speeds =
                                     new ChassisSpeeds(

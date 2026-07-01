@@ -49,7 +49,6 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.ConstantsKt;
 import frc.robot.autonomous.AutoCommandsKt;
 import frc.robot.lib.BetterPoseEstimator;
-import frc.robot.lib.LocalADStarAK;
 import frc.robot.lib.Mode;
 import frc.robot.lib.sysid.SysIdable;
 import frc.robot.subsystems.drive.ModuleIOs.Module;
@@ -328,9 +327,9 @@ public class Drive extends SubsystemBase implements SysIdable {
                     !gyroInputs.connected && ConstantsKt.getCURRENT_MODE() != Mode.SIM);
 
             Logger.recordOutput("Odometry/IsSkidding", isSkidding);
-//            if (isSkidding) {
-//                return;
-//            }
+            //            if (isSkidding) {
+            //                return;
+            //            }
 
             if (gyroInputs.connected) {
                 // Update odometry

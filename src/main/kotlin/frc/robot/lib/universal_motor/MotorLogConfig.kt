@@ -1,7 +1,5 @@
 package frc.robot.lib.universal_motor
 
-import com.ctre.phoenix6.signals.ControlModeValue
-
 data class MotorLogConfig(
     val position: Boolean = true,
     val statorCurrent: Boolean = true,

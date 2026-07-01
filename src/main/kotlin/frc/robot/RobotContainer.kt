@@ -1,8 +1,6 @@
 package frc.robot
 
 import com.pathplanner.lib.auto.AutoBuilder
-import edu.wpi.first.math.geometry.Rotation2d
-import edu.wpi.first.units.measure.Angle
 import edu.wpi.first.wpilibj2.command.Command
 import edu.wpi.first.wpilibj2.command.Commands
 import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller
@@ -10,7 +8,6 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine
 import frc.robot.lib.Mode
 import frc.robot.lib.extensions.enableAutoLogOutputFor
 import frc.robot.subsystems.drive.DriveCommands
-import kotlin.math.roundToInt
 import org.ironmaple.simulation.SimulatedArena
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser
 
@@ -40,11 +37,11 @@ object RobotContainer {
 
     private fun configureDefaultCommands() {
         drive.defaultCommand =
-                        DriveCommands.joystickDrive(
-                            { -driverController.leftY },
-                            { -driverController.leftX },
-                            { -driverController.rightX },
-                        )
+            DriveCommands.joystickDrive(
+                { -driverController.leftY },
+                { -driverController.leftX },
+                { -driverController.rightX },
+            )
     }
 
     private fun configureButtonBindings() {
