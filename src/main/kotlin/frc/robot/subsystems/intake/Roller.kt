@@ -7,6 +7,7 @@ import edu.wpi.first.wpilibj2.command.Command
 import edu.wpi.first.wpilibj2.command.SubsystemBase
 import edu.wpi.first.wpilibj2.command.button.Trigger
 import frc.robot.lib.extensions.rps
+import frc.robot.lib.extensions.volts
 import frc.robot.lib.universal_motor.UniversalTalonFX
 
 object Roller : SubsystemBase() {
@@ -16,16 +17,16 @@ object Roller : SubsystemBase() {
             port = PORT,
             simGains = SIM_GAINS
         )
-    private val setpoint: AngularVelocity = 0.rps
-    private val voltageRequest = VoltageOut(0.0)
+    private var setpoint: AngularVelocity = 0.rps
+    private var voltageRequest = VoltageOut(0.0)
 
     val isActive = Trigger { setpoint > 0.rps }
 
     fun setVoltage(voltage: Voltage): Command =
         this.runOnce { motor.setControl(voltageRequest.withOutput(voltage)) }
-    fun intake(): Command = setVoltage(INTAKE)
-    fun outTake(): Command = setVoltage(OUTTAKE)
-    fun stop(): Command = setVoltage(STOP)
+    fun intake(): Command = setVoltage(INTAKE_VOLTAGE)
+    fun outtake(): Command = setVoltage(OUTTAKE_VOLTAGE)
+    fun stop(): Command = setVoltage(0.volts)
 
     override fun periodic() {
         motor.periodic()
