@@ -6,7 +6,8 @@ import edu.wpi.first.wpilibj2.command.Commands
 import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine
-import frc.robot.autonomous.pathFindingCommand
+import frc.robot.autonomous.pathFindingCommandBlue
+import frc.robot.autonomous.pathFindingCommandRed
 import frc.robot.lib.Mode
 import frc.robot.lib.extensions.enableAutoLogOutputFor
 import frc.robot.subsystems.drive.DriveCommands
@@ -47,8 +48,9 @@ object RobotContainer {
     }
 
     private fun configureButtonBindings() {
-        driverController.leftBumper().onTrue(DriveCommands.resetGyro())
-        driverController.a().onTrue(pathFindingCommand())
+        driverController.povLeft().onTrue(DriveCommands.resetGyro())
+        driverController.a().onTrue(pathFindingCommandRed())
+        driverController.y().onTrue(pathFindingCommandBlue())
     }
 
     fun getAutonomousCommand(): Command = autoChooser.get()
