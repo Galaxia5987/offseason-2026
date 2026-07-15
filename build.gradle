@@ -126,6 +126,7 @@ dependencies {
 
     implementation project(':annotation')
     ksp project(':annotation')
+    compileOnly "org.junit.jupiter:junit-jupiter-api:5.10.1"
 
     testImplementation platform("org.junit:junit-bom:5.10.1")
     testImplementation "org.junit.jupiter:junit-jupiter-api"
@@ -137,6 +138,25 @@ dependencies {
     def akitJson = new groovy.json.JsonSlurper().parseText(new File(projectDir.getAbsolutePath() + "/vendordeps/AdvantageKit.json").text)
     kapt "org.littletonrobotics.akit:akit-autolog:$akitJson.version"
     testImplementation "org.jetbrains.kotlin:kotlin-test:2.0.0"
+}
+
+// @AddTests declarations live in main sources, so their processor runs with
+// main KSP. JUnit is compile-only and the generated class is excluded from the
+// deployed jar below.
+tasks.matching { it.name == "kspKotlin" }.configureEach {
+    kspConfig.processorOptions.put("unitTests.enabled", "true")
+    kspConfig.processorOptions.put("unitTests.projectPath", projectDir.absolutePath)
+}
+
+tasks.matching { it.name == "kspTestKotlin" }.configureEach {
+    kspConfig.processorOptions.put("unitTests.enabled", "false")
+}
+
+tasks.withType(Test).configureEach {
+    testLogging {
+        events "passed", "failed", "skipped"
+        exceptionFormat "full"
+    }
 }
 
 sourceSets {
@@ -160,6 +180,7 @@ sourceSets {
 
 test {
     useJUnitPlatform()
+    testClassesDirs += sourceSets.main.output.classesDirs
     systemProperty 'junit.jupiter.extensions.autodetection.enabled', 'true'
 }
 
@@ -176,6 +197,7 @@ wpi.sim.addDriverstation()
 // in order to make them all available at runtime. Also adding the manifest so WPILib
 // knows where to look for our Robot Class.
 jar {
+    exclude 'frc/robot/lib/unit_test/generated/unitTests*'
     from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
     from sourceSets.main.allSource
     manifest edu.wpi.first.gradlerio.GradleRIOPlugin.javaManifest(ROBOT_MAIN_CLASS)

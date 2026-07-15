@@ -1,0 +1,244 @@
+package org.team5987.annotation.unit_test
+
+import com.google.devtools.ksp.processing.Dependencies
+import com.google.devtools.ksp.processing.KSPLogger
+import com.google.devtools.ksp.processing.Resolver
+import com.google.devtools.ksp.processing.SymbolProcessor
+import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
+import com.google.devtools.ksp.processing.SymbolProcessorProvider
+import com.google.devtools.ksp.symbol.ClassKind
+import com.google.devtools.ksp.symbol.FileLocation
+import com.google.devtools.ksp.symbol.KSAnnotated
+import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSPropertyDeclaration
+import com.google.devtools.ksp.validate
+import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.FileSpec
+import com.squareup.kotlinpoet.FunSpec
+import com.squareup.kotlinpoet.LIST
+import com.squareup.kotlinpoet.MemberName
+import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import com.squareup.kotlinpoet.TypeSpec
+import com.squareup.kotlinpoet.ksp.writeTo
+
+private const val ANNOTATION_NAME =
+    "org.team5987.annotation.unit_test.AddTests"
+private const val UNIT_TEST_NAME = "frc.robot.lib.unit_test.UnitTest"
+private const val GENERATED_PACKAGE = "frc.robot.lib.unit_test.generated"
+private const val GENERATED_CLASS = "UnitTests"
+
+class UnitTestProcessor(environment: SymbolProcessorEnvironment) : SymbolProcessor {
+    private val codeGenerator = environment.codeGenerator
+    private val logger: KSPLogger = environment.logger
+    private val projectPath = environment.options["unitTests.projectPath"]
+    private val enabled =
+        environment.options["unitTests.enabled"]?.toBoolean() == true
+    private var generated = false
+
+    override fun process(resolver: Resolver): List<KSAnnotated> {
+        if (!enabled) return emptyList()
+        if (generated) return emptyList()
+
+        val symbols =
+            resolver.getSymbolsWithAnnotation(ANNOTATION_NAME).toList()
+        val deferred = symbols.filterNot { it.validate() }
+        if (deferred.isNotEmpty()) return deferred
+
+        val properties =
+            symbols
+                .filterIsInstance<KSPropertyDeclaration>()
+
+        if (properties.isEmpty()) return deferred
+
+        val duplicateNames =
+            properties.groupBy { it.simpleName.asString() }.filterValues {
+                it.size > 1
+            }
+        duplicateNames.forEach { (name, declarations) ->
+            declarations.forEach {
+                logger.error(
+                    "@AddTests property names must be unique; '$name' is used more than once",
+                    it,
+                )
+            }
+        }
+
+        val testClass = TypeSpec.classBuilder(GENERATED_CLASS)
+        val file = FileSpec.builder(GENERATED_PACKAGE, GENERATED_CLASS)
+        val sourceFiles = mutableSetOf<com.google.devtools.ksp.symbol.KSFile>()
+
+        properties
+            .filterNot { it.simpleName.asString() in duplicateNames }
+            .forEachIndexed { index, property ->
+                property.containingFile?.let(sourceFiles::add)
+
+                val sourceAlias = "unitTestSource$index"
+                val sourceReference = sourceReference(property, sourceAlias, file)
+                    ?: return@forEachIndexed
+                val sourceLocation = property.sourceLocation()
+
+                when (property.testKind()) {
+                    TestKind.SINGLE ->
+                        testClass.addFunction(
+                            createSingleTest(
+                                property.simpleName.asString(),
+                                sourceReference,
+                                sourceLocation,
+                            )
+                        )
+                    TestKind.LIST ->
+                        testClass.addFunction(
+                            createListTests(
+                                property.simpleName.asString(),
+                                sourceReference,
+                                sourceLocation,
+                            )
+                        )
+                    null ->
+                        logger.error(
+                            "@AddTests can only annotate UnitTest or List<UnitTest> properties",
+                            property,
+                        )
+                }
+            }
+
+        if (testClass.funSpecs.isEmpty()) return deferred
+
+        file.addType(testClass.build())
+        file.build().writeTo(
+            codeGenerator,
+            Dependencies(true, *sourceFiles.toTypedArray()),
+        )
+        generated = true
+        return deferred
+    }
+
+    private fun sourceReference(
+        property: KSPropertyDeclaration,
+        alias: String,
+        file: FileSpec.Builder,
+    ): String? {
+        val owner = property.parentDeclaration
+        if (owner == null) {
+            file.addAliasedImport(
+                MemberName(
+                    property.packageName.asString(),
+                    property.simpleName.asString(),
+                ),
+                alias,
+            )
+            return alias
+        }
+
+        val ownerClass = owner as? KSClassDeclaration
+        if (ownerClass?.classKind != ClassKind.OBJECT) {
+            logger.error(
+                "@AddTests properties must be top-level or declared in an object",
+                property,
+            )
+            return null
+        }
+
+        val qualifiedName = ownerClass.qualifiedName?.asString() ?: return null
+        val packageName = ownerClass.packageName.asString()
+        val relativeName = qualifiedName.removePrefix("$packageName.")
+        file.addAliasedImport(
+            ClassName(packageName, relativeName.split('.')),
+            alias,
+        )
+        return "$alias.${property.simpleName.asString()}"
+    }
+
+    private fun KSPropertyDeclaration.testKind(): TestKind? {
+        val resolvedType = type.resolve()
+        val declarationName =
+            resolvedType.declaration.qualifiedName?.asString()
+
+        if (declarationName == UNIT_TEST_NAME) return TestKind.SINGLE
+
+        val isList =
+            declarationName == "kotlin.collections.List" ||
+                declarationName == "kotlin.collections.MutableList"
+        if (!isList) return null
+
+        val elementName =
+            resolvedType.arguments
+                .singleOrNull()
+                ?.type
+                ?.resolve()
+                ?.declaration
+                ?.qualifiedName
+                ?.asString()
+        return if (elementName == UNIT_TEST_NAME) TestKind.LIST else null
+    }
+
+    private fun KSPropertyDeclaration.sourceLocation(): String =
+        (location as? FileLocation)?.let {
+            "${it.filePath.toProjectPath()}:${it.lineNumber}"
+        } ?: containingFile?.filePath?.toProjectPath() ?: "unknown source"
+
+    private fun String.toProjectPath(): String {
+        val rootPath = projectPath?.trimEnd('/', '\\') ?: return this
+        return removePrefix(rootPath).trimStart('/', '\\')
+    }
+
+    private fun createSingleTest(
+        name: String,
+        source: String,
+        sourceLocation: String,
+    ): FunSpec =
+        FunSpec.builder(name)
+            .addAnnotation(TEST)
+            .addCode(assertionCode(source, sourceLocation))
+            .build()
+
+    private fun createListTests(
+        name: String,
+        source: String,
+        sourceLocation: String,
+    ): FunSpec =
+        FunSpec.builder(name)
+            .addAnnotation(TEST_FACTORY)
+            .returns(LIST.parameterizedBy(DYNAMIC_TEST))
+            .beginControlFlow("return %L.mapIndexed { index, unitTest ->", source)
+            .beginControlFlow("%T.dynamicTest(%S + index)", DYNAMIC_TEST, "${name}_")
+            .addCode(assertionCode("unitTest", sourceLocation))
+            .endControlFlow()
+            .endControlFlow()
+            .build()
+
+    private fun assertionCode(source: String, sourceLocation: String) =
+        com.squareup.kotlinpoet.CodeBlock.builder()
+            .addStatement("val result = %L.test()", source)
+            .beginControlFlow("if (!result.passed)")
+            .addStatement(
+                "throw %T(\n⇥" +
+                    "%S + %S + %S + result.inputs.joinToString() + %S + result.actual + " +
+                    "%S + result.functionName,\n⇤)",
+                ASSERTION_ERROR,
+                "\nTest source: ",
+                sourceLocation,
+                "\nInput: ",
+                "\nActual output: ",
+                "\nFunction: "
+            )
+            .endControlFlow()
+            .build()
+
+    private enum class TestKind {
+        SINGLE,
+        LIST,
+    }
+
+    private companion object {
+        val TEST = ClassName("org.junit.jupiter.api", "Test")
+        val TEST_FACTORY = ClassName("org.junit.jupiter.api", "TestFactory")
+        val DYNAMIC_TEST = ClassName("org.junit.jupiter.api", "DynamicTest")
+        val ASSERTION_ERROR = ClassName("kotlin", "AssertionError")
+    }
+}
+
+class UnitTestProcessorProvider : SymbolProcessorProvider {
+    override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor =
+        UnitTestProcessor(environment)
+}
