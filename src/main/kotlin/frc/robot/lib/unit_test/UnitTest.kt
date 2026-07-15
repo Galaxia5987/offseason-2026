@@ -23,13 +23,13 @@ class UnitTest<O>(
                 function.call(*inputs)
             } catch (e: IllegalArgumentException) {
                 error(
-                    "\nfunction input are : (${
+                    "\nfunction inputs are : ${function.name}(${
                         function.valueParameters.joinToString {
                             "${it.name}: ${
                                 it.type.toString().substringAfterLast(".")
                             }"
                         }
-                    }) wrong inputs\ntest source : $src"
+                    }) wrong inputs!\ntest source : $src"
                 )
             }
         return TestResult(
