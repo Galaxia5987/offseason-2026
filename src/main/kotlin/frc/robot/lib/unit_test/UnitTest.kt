@@ -11,7 +11,7 @@ data class TestResult(
     val functionName: String
 )
 
-class TestCase<O>(
+class UnitTest<O>(
     val comparison: (O) -> Boolean,
     val function: KFunction<O>,
     vararg val inputs: Any?,
