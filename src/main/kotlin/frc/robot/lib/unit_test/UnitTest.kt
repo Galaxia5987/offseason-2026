@@ -17,19 +17,19 @@ class UnitTest<O>(
     vararg val inputs: Any?,
     val name: String = "",
 ) {
-    fun test(): TestResult {
+    fun test(src: String): TestResult {
         val actual =
             try {
                 function.call(*inputs)
             } catch (e: IllegalArgumentException) {
                 error(
-                    "function input are : (${
-                    function.valueParameters.joinToString {
-                        "${it.name}: ${
-                            it.type.toString().substringAfterLast(".")
-                        }"
-                    }
-                }) wrong inputs"
+                    "\nfunction input are : (${
+                        function.valueParameters.joinToString {
+                            "${it.name}: ${
+                                it.type.toString().substringAfterLast(".")
+                            }"
+                        }
+                    }) wrong inputs\ntest source : $src"
                 )
             }
         return TestResult(

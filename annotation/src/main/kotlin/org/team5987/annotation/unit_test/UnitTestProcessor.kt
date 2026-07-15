@@ -16,7 +16,6 @@ import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.LIST
-import com.squareup.kotlinpoet.MemberName
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.ksp.writeTo
@@ -69,12 +68,11 @@ class UnitTestProcessor(environment: SymbolProcessorEnvironment) : SymbolProcess
 
         properties
             .filterNot { it.simpleName.asString() in duplicateNames }
-            .forEachIndexed { index, property ->
+            .forEach { property ->
                 property.containingFile?.let(sourceFiles::add)
 
-                val sourceAlias = "unitTestSource$index"
-                val sourceReference = sourceReference(property, sourceAlias, file)
-                    ?: return@forEachIndexed
+                val sourceReference = sourceReference(property, file)
+                    ?: return@forEach
                 val sourceLocation = property.sourceLocation()
 
                 when (property.testKind()) {
@@ -115,19 +113,15 @@ class UnitTestProcessor(environment: SymbolProcessorEnvironment) : SymbolProcess
 
     private fun sourceReference(
         property: KSPropertyDeclaration,
-        alias: String,
         file: FileSpec.Builder,
     ): String? {
         val owner = property.parentDeclaration
         if (owner == null) {
-            file.addAliasedImport(
-                MemberName(
-                    property.packageName.asString(),
-                    property.simpleName.asString(),
-                ),
-                alias,
+            file.addImport(
+                property.packageName.asString(),
+                property.simpleName.asString(),
             )
-            return alias
+            return property.simpleName.asString()
         }
 
         val ownerClass = owner as? KSClassDeclaration
@@ -142,11 +136,9 @@ class UnitTestProcessor(environment: SymbolProcessorEnvironment) : SymbolProcess
         val qualifiedName = ownerClass.qualifiedName?.asString() ?: return null
         val packageName = ownerClass.packageName.asString()
         val relativeName = qualifiedName.removePrefix("$packageName.")
-        file.addAliasedImport(
-            ClassName(packageName, relativeName.split('.')),
-            alias,
-        )
-        return "$alias.${property.simpleName.asString()}"
+        val ownerClassName = ClassName(packageName, relativeName.split('.'))
+        file.addImport(ownerClassName)
+        return "${ownerClassName.simpleName}.${property.simpleName.asString()}"
     }
 
     private fun KSPropertyDeclaration.testKind(): TestKind? {
@@ -209,7 +201,7 @@ class UnitTestProcessor(environment: SymbolProcessorEnvironment) : SymbolProcess
 
     private fun assertionCode(source: String, sourceLocation: String) =
         com.squareup.kotlinpoet.CodeBlock.builder()
-            .addStatement("val result = %L.test()", source)
+            .addStatement("val result = %L.test(%S)", source, sourceLocation)
             .beginControlFlow("if (!result.passed)")
             .addStatement(
                 "throw %T(\n⇥" +

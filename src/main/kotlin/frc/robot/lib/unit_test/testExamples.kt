@@ -7,8 +7,7 @@ fun add(n1: Float, n2: Float, n3: Float, n4: Float): Float {
 }
 
 @AddTests
-val unitTest =
-    UnitTest(comparison = { it == 10f }, ::add, 1.0f, 2.0f, 3.0f, 4.0f)
+val unitTest = UnitTest(comparison = { it == 10f }, ::add, "", 2.0f, 3.0f, 4.0f)
 
 @AddTests
 val additionCases =
