@@ -149,7 +149,14 @@ tasks.matching { it.name == "kspKotlin" }.configureEach {
 }
 
 tasks.matching { it.name == "kspTestKotlin" }.configureEach {
-    kspConfig.processorOptions.put("unitTests.enabled", "false")
+    enabled = false
+}
+
+tasks.matching {
+    it.name == "kaptGenerateStubsTestKotlin" ||
+            it.name == "kaptTestKotlin"
+}.configureEach {
+    enabled = false
 }
 
 tasks.withType(Test).configureEach {
@@ -184,6 +191,9 @@ test {
     systemProperty 'junit.jupiter.extensions.autodetection.enabled', 'true'
 }
 
+def subsystemSimNativeDir = layout.buildDirectory.dir("jni/release")
+
+
 // Simulation configuration (e.g. environment variables).
 //
 // The sim GUI is *disabled* by default to support running
@@ -197,7 +207,8 @@ wpi.sim.addDriverstation()
 // in order to make them all available at runtime. Also adding the manifest so WPILib
 // knows where to look for our Robot Class.
 jar {
-    exclude 'frc/robot/lib/unit_test/generated/unitTests*'
+    exclude 'frc/robot/lib/unit_test/generated/UnitTests*'
+    exclude 'frc/robot/lib/unit_test/generated/CommandTests*'
     from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
     from sourceSets.main.allSource
     manifest edu.wpi.first.gradlerio.GradleRIOPlugin.javaManifest(ROBOT_MAIN_CLASS)
@@ -218,19 +229,18 @@ tasks.withType(JavaCompile) {
 project.compileKotlin.dependsOn(createVersionFile)
 project.compileJava.dependsOn(createVersionFile)
 gversion {
-    srcDir       = "src/main/kotlin/"
+    srcDir = "src/main/kotlin/"
     classPackage = "frc.robot"
-    className    = "BuildConstants"
-    dateFormat   = "yyyy-MM-dd HH:mm z"
-    timeZone     = "Asia/Jerusalem"
-    indent       = "  "
+    className = "BuildConstants"
+    dateFormat = "yyyy-MM-dd HH:mm z"
+    timeZone = "Asia/Jerusalem"
+    indent = "  "
 }
 
 tasks.withType(JavaCompile).configureEach {
     // Configure string concat to always inline compile
     options.compilerArgs.add '-XDstringConcat=inline'
 }
-
 
 
 kotlin {

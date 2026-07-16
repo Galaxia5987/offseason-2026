@@ -13,6 +13,7 @@ import frc.robot.lib.extensions.deg
 import frc.robot.lib.extensions.kg2m
 import frc.robot.lib.extensions.m
 import frc.robot.lib.getFileNameFromStack
+import frc.robot.lib.unit_test.allMotors
 import org.littletonrobotics.junction.Logger
 
 /**
@@ -32,7 +33,7 @@ import org.littletonrobotics.junction.Logger
  * ```
  */
 class UniversalTalonFX(
-    private val port: Int,
+    val port: Int,
     private val canbus: CANBus = CANBus("rio"),
     private val subsystem: String = getFileNameFromStack(),
     private val motorName: String = "motorId $port",
@@ -44,6 +45,10 @@ class UniversalTalonFX(
     private val absoluteEncoderOffset: Angle = 0.deg,
     private val logConfig: MotorLogConfig = MotorLogConfig()
 ) {
+    init {
+        allMotors[subsystem] = this
+    }
+
     private val motorIO: MotorIO =
         if (CURRENT_MODE == Mode.REAL)
             MotorIOReal(

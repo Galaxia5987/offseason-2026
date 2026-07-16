@@ -4,7 +4,6 @@ import kotlin.reflect.KFunction
 import kotlin.reflect.full.valueParameters
 
 data class TestResult(
-    val name: String,
     val passed: Boolean,
     val inputs: List<Any?>,
     val actual: Any?,
@@ -15,7 +14,6 @@ class UnitTest<O>(
     val comparison: (O) -> Boolean,
     val function: KFunction<O>,
     vararg val inputs: Any?,
-    val name: String = "",
 ) {
     fun test(src: String): TestResult {
         val actual =
@@ -33,7 +31,6 @@ class UnitTest<O>(
                 )
             }
         return TestResult(
-            name = name,
             passed = comparison(actual),
             inputs = inputs.toList(),
             actual = actual,
