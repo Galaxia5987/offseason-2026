@@ -16,6 +16,7 @@ import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.LIST
+import com.squareup.kotlinpoet.MemberName
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.ksp.writeTo
@@ -202,19 +203,17 @@ class UnitTestProcessor(environment: SymbolProcessorEnvironment) : SymbolProcess
     private fun assertionCode(source: String, sourceLocation: String) =
         com.squareup.kotlinpoet.CodeBlock.builder()
             .addStatement("val result = %L.test(%S)", source, sourceLocation)
-            .beginControlFlow("if (!result.passed)")
             .addStatement(
-                "throw %T(\n⇥" +
+                "%M(\n⇥result.passed,\n" +
                     "%S + %S + %S + result.inputs.joinToString() + %S + result.actual + " +
                     "%S + result.functionName,\n⇤)",
-                ASSERTION_ERROR,
+                ASSERT_TRUE,
                 "\nTest source: ",
                 sourceLocation,
                 "\nInput: ",
                 "\nActual output: ",
                 "\nFunction: "
             )
-            .endControlFlow()
             .build()
 
     private enum class TestKind {
@@ -223,10 +222,10 @@ class UnitTestProcessor(environment: SymbolProcessorEnvironment) : SymbolProcess
     }
 
     private companion object {
-        val TEST = ClassName("org.junit.jupiter.api", "Test")
+        val TEST = ClassName("kotlin.test", "Test")
         val TEST_FACTORY = ClassName("org.junit.jupiter.api", "TestFactory")
         val DYNAMIC_TEST = ClassName("org.junit.jupiter.api", "DynamicTest")
-        val ASSERTION_ERROR = ClassName("kotlin", "AssertionError")
+        val ASSERT_TRUE = MemberName("kotlin.test", "assertTrue")
     }
 }
 

@@ -14,11 +14,13 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase
 import edu.wpi.first.wpilibj2.command.button.Trigger
 import frc.robot.lib.createDisableTriggerForCoast
 import frc.robot.lib.extensions.*
+import frc.robot.lib.unit_test.SimulationResettable
+import frc.robot.lib.unit_test.registerSimulationResettable
 import frc.robot.lib.universal_motor.MotorLogConfig
 import frc.robot.lib.universal_motor.UniversalTalonFX
 import org.littletonrobotics.junction.Logger
 
-object Extender : SubsystemBase() {
+object Extender : SubsystemBase(), SimulationResettable {
     private val motor =
         UniversalTalonFX(
             port = PORT,
@@ -66,7 +68,15 @@ object Extender : SubsystemBase() {
     init {
         motor.reset()
         createDisableTriggerForCoast(motor)
+        registerSimulationResettable(this)
     }
+
+    override fun resetSimulationState() {
+        setpoint = 0.meters
+        currentControlRequest = ControlModeValue.NeutralOut
+        lastStallingDistance = 0.m
+    }
+
     fun setPosition(value: Distance): Command =
         this.runOnce {
             setpoint = value

@@ -14,6 +14,7 @@ import frc.robot.lib.extensions.kg2m
 import frc.robot.lib.extensions.m
 import frc.robot.lib.getFileNameFromStack
 import frc.robot.lib.unit_test.allMotors
+import frc.robot.lib.unit_test.allMotorsFromPorts
 import org.littletonrobotics.junction.Logger
 
 /**
@@ -47,6 +48,7 @@ class UniversalTalonFX(
 ) {
     init {
         allMotors[subsystem] = this
+        allMotorsFromPorts[port] = this
     }
 
     private val motorIO: MotorIO =
@@ -84,6 +86,10 @@ class UniversalTalonFX(
     fun periodic() {
         motorIO.updateInputs()
         Logger.processInputs("Subsystems/$subsystem/$motorName", inputs)
+    }
+
+    fun resetInputs() {
+        motorIO.resetInputs()
     }
 
     fun applyConfiguration(config: TalonFXConfiguration) {

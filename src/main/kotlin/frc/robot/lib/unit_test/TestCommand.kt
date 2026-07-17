@@ -2,14 +2,15 @@ package frc.robot.lib.unit_test
 
 import edu.wpi.first.units.measure.*
 import edu.wpi.first.wpilibj2.command.Command
-import edu.wpi.first.wpilibj2.command.CommandScheduler
 import edu.wpi.first.wpilibj2.command.Subsystem
 import frc.robot.lib.extensions.get
-import frc.robot.lib.extensions.sec
+import frc.robot.lib.universal_motor.LoggedMotorInputs
 import frc.robot.lib.universal_motor.UniversalTalonFX
 
 val allMotors = hashMapOf<String, UniversalTalonFX>()
-val commandScheduler = CommandScheduler.getInstance()
+val allMotorsFromPorts = hashMapOf<Int, UniversalTalonFX>()
+
+fun getInputs(port: Int): LoggedMotorInputs = allMotorsFromPorts[port]!!.inputs
 
 data class MotorInputChecks(
     val motorPort: Int,
@@ -44,8 +45,8 @@ class CommandTest(
         val runtime = SubsystemSimRuntime
 
         return try {
-            commandScheduler.schedule(command)
-            runtime.runFor(duration[sec])
+            runtime.scheduler.schedule(command)
+            runtime.runFor(duration)
 
             println("Command test: $source")
             println("Command: ${command.name}")

@@ -127,6 +127,7 @@ dependencies {
     implementation project(':annotation')
     ksp project(':annotation')
     compileOnly "org.junit.jupiter:junit-jupiter-api:5.10.1"
+    compileOnly "org.jetbrains.kotlin:kotlin-test-junit5:2.0.0"
 
     testImplementation platform("org.junit:junit-bom:5.10.1")
     testImplementation "org.junit.jupiter:junit-jupiter-api"
@@ -137,7 +138,7 @@ dependencies {
 
     def akitJson = new groovy.json.JsonSlurper().parseText(new File(projectDir.getAbsolutePath() + "/vendordeps/AdvantageKit.json").text)
     kapt "org.littletonrobotics.akit:akit-autolog:$akitJson.version"
-    testImplementation "org.jetbrains.kotlin:kotlin-test:2.0.0"
+    testImplementation "org.jetbrains.kotlin:kotlin-test-junit5:2.0.0"
 }
 
 // @AddTests declarations live in main sources, so their processor runs with
