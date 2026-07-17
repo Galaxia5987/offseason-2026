@@ -11,21 +11,22 @@ import frc.robot.lib.universal_motor.UniversalTalonFX
 val allMotors = hashMapOf<String, UniversalTalonFX>()
 val commandScheduler = CommandScheduler.getInstance()
 
-data class ComparisonInputs(
+data class MotorInputChecks(
     val motorPort: Int,
-    val positionTest: ((Angle) -> Boolean)? = null,
-    val distanceTest: ((Distance) -> Boolean)? = null,
-    val velocityTest: ((AngularVelocity) -> Boolean)? = null,
-    val voltageTest: ((Voltage) -> Boolean)? = null,
-    val currentTest: ((Current) -> Boolean)? = null,
-    val statorCurrentTest: ((Current) -> Boolean)? = null
+    val positionTest: (Angle) -> Boolean = { true },
+    val distanceTest: (Distance) -> Boolean = { true },
+    val velocityTest: (AngularVelocity) -> Boolean = { true },
+    val voltageTest: (Voltage) -> Boolean = { true },
+    val currentTest: (Current) -> Boolean = { true },
+    val statorCurrentTest: (Current) -> Boolean = { true }
 )
 
 data class CommandTestResult(val passed: Boolean, val failures: List<String>)
 
 class CommandTest(
     val command: Command,
-    vararg val compareList: ComparisonInputs,
+    vararg val motorInputChecks: MotorInputChecks,
+    var generalTest: () -> Boolean = { true },
     val duration: Time
 ) {
     val requiredSubsystems: Set<Subsystem> = command.requirements
@@ -33,12 +34,14 @@ class CommandTest(
     val comparedMotors =
         commandMotors
             .filter { motor ->
-                compareList.any { expect -> motor.port == expect.motorPort }
+                motorInputChecks.any { expect ->
+                    motor.port == expect.motorPort
+                }
             }
             .groupBy { it.port }
 
     fun test(source: String): CommandTestResult {
-        val runtime = SubsystemSimRuntime()
+        val runtime = SubsystemSimRuntime
 
         return try {
             commandScheduler.schedule(command)
@@ -57,19 +60,18 @@ class CommandTest(
     }
 
     private fun compareInputs(): List<String> = buildList {
-        compareList.forEach { expected ->
-            val matchingMotors = comparedMotors[expected.motorPort].orEmpty()
+        if (!generalTest()) add("Didn't pass the generalTest !")
 
+        motorInputChecks.forEach { expected ->
+            val matchingMotors = comparedMotors[expected.motorPort].orEmpty()
             when {
                 matchingMotors.isEmpty() ->
                     add(
-                        "Motor ${expected.motorPort} was not found in " +
-                            "the command requirements"
+                        "Motor ${expected.motorPort} was not found in the command requirements"
                     )
                 matchingMotors.size > 1 ->
                     add(
-                        "Motor port ${expected.motorPort} matched " +
-                            "${matchingMotors.size} motors"
+                        "Motor port ${expected.motorPort} matched ${matchingMotors.size} motors"
                     )
                 else -> compareMotor(expected, matchingMotors.single(), this)
             }
@@ -77,65 +79,40 @@ class CommandTest(
     }
 
     private fun compareMotor(
-        expected: ComparisonInputs,
+        expected: MotorInputChecks,
         motor: UniversalTalonFX,
         failures: MutableList<String>
     ) {
         val actual = motor.inputs
-        compare(
-            motor.port,
-            "position",
-            actual.position,
-            expected.positionTest,
-            failures
-        )
-        compare(
-            motor.port,
-            "distance",
-            actual.distance,
-            expected.distanceTest,
-            failures
-        )
-        compare(
-            motor.port,
-            "velocity",
-            actual.velocity,
-            expected.velocityTest,
-            failures
-        )
-        compare(
-            motor.port,
-            "voltage",
-            actual.voltage,
-            expected.voltageTest,
-            failures
-        )
-        compare(
-            motor.port,
-            "current",
-            actual.current,
-            expected.currentTest,
-            failures
-        )
-        compare(
-            motor.port,
-            "stator current",
-            actual.statorCurrent,
-            expected.statorCurrentTest,
-            failures
-        )
-    }
+        if (!expected.positionTest(actual.position))
+            failures.add(
+                "Motor ${motor.port} position check failed: ${actual.position}"
+            )
 
-    private fun <T> compare(
-        port: Int,
-        inputName: String,
-        actual: T,
-        comparison: ((T) -> Boolean)?,
-        failures: MutableList<String>
-    ) {
-        if (comparison != null && !comparison(actual)) {
-            failures.add("Motor $port $inputName comparison failed: $actual")
-        }
+        if (!expected.distanceTest(actual.distance))
+            failures.add(
+                "Motor ${motor.port} position check failed: ${actual.distance}"
+            )
+
+        if (!expected.velocityTest(actual.velocity))
+            failures.add(
+                "Motor ${motor.port} position check failed: ${actual.velocity}"
+            )
+
+        if (!expected.voltageTest(actual.voltage))
+            failures.add(
+                "Motor ${motor.port} position check failed: ${actual.voltage}"
+            )
+
+        if (!expected.currentTest(actual.current))
+            failures.add(
+                "Motor ${motor.port} position comparison failed: ${actual.current}"
+            )
+
+        if (!expected.statorCurrentTest(actual.statorCurrent))
+            failures.add(
+                "Motor ${motor.port} position comparison failed: ${actual.statorCurrent}"
+            )
     }
 
     private fun printInputs(motor: UniversalTalonFX) {

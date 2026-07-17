@@ -5,7 +5,8 @@ import edu.wpi.first.wpilibj.simulation.DriverStationSim
 import edu.wpi.first.wpilibj.simulation.SimHooks
 import edu.wpi.first.wpilibj2.command.CommandScheduler
 
-class SubsystemSimRuntime(private val periodSeconds: Double = 0.02) {
+object SubsystemSimRuntime {
+    private const val periodSeconds: Double = 0.02
     private val scheduler = CommandScheduler.getInstance()
 
     init {
@@ -29,8 +30,12 @@ class SubsystemSimRuntime(private val periodSeconds: Double = 0.02) {
     fun runUntil(timeoutSeconds: Double, condition: () -> Boolean): Boolean {
         repeat((timeoutSeconds / periodSeconds).toInt()) {
             step()
-            if (condition()) return true
+            if (condition()) {
+                DriverStationSim.notifyNewData()
+                return true
+            }
         }
+        DriverStationSim.notifyNewData()
         return false
     }
 
