@@ -141,25 +141,6 @@ dependencies {
     testImplementation "org.jetbrains.kotlin:kotlin-test-junit5:2.0.0"
 }
 
-// @AddTests declarations live in main sources, so their processor runs with
-// main KSP. JUnit is compile-only and the generated class is excluded from the
-// deployed jar below.
-tasks.matching { it.name == "kspKotlin" }.configureEach {
-    kspConfig.processorOptions.put("unitTests.enabled", "true")
-    kspConfig.processorOptions.put("unitTests.projectPath", projectDir.absolutePath)
-}
-
-tasks.matching { it.name == "kspTestKotlin" }.configureEach {
-    enabled = false
-}
-
-tasks.matching {
-    it.name == "kaptGenerateStubsTestKotlin" ||
-            it.name == "kaptTestKotlin"
-}.configureEach {
-    enabled = false
-}
-
 tasks.withType(Test).configureEach {
     testLogging {
         events "passed", "failed", "skipped"
@@ -208,8 +189,6 @@ wpi.sim.addDriverstation()
 // in order to make them all available at runtime. Also adding the manifest so WPILib
 // knows where to look for our Robot Class.
 jar {
-    exclude 'frc/robot/lib/unit_test/generated/UnitTests*'
-    exclude 'frc/robot/lib/unit_test/generated/CommandTests*'
     from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
     from sourceSets.main.allSource
     manifest edu.wpi.first.gradlerio.GradleRIOPlugin.javaManifest(ROBOT_MAIN_CLASS)

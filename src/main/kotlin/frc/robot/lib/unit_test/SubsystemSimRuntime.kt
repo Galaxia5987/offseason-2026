@@ -8,9 +8,15 @@ import edu.wpi.first.wpilibj2.command.Command
 import edu.wpi.first.wpilibj2.command.CommandScheduler
 import frc.robot.lib.extensions.get
 import frc.robot.lib.extensions.sec
+import frc.robot.lib.universal_motor.LoggedMotorInputs
+import frc.robot.lib.universal_motor.UniversalTalonFX
 import kotlin.test.AfterTest
 
 private const val PERIODIC_TIME: Double = 0.02
+
+val allMotorsFromPorts = hashMapOf<Int, UniversalTalonFX>()
+
+fun getInputs(port: Int): LoggedMotorInputs = allMotorsFromPorts[port]!!.inputs
 
 object SubsystemSimRuntime {
     val scheduler: CommandScheduler = CommandScheduler.getInstance()

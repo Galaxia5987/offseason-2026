@@ -13,7 +13,6 @@ import frc.robot.lib.extensions.deg
 import frc.robot.lib.extensions.kg2m
 import frc.robot.lib.extensions.m
 import frc.robot.lib.getFileNameFromStack
-import frc.robot.lib.unit_test.allMotors
 import frc.robot.lib.unit_test.allMotorsFromPorts
 import org.littletonrobotics.junction.Logger
 
@@ -47,7 +46,6 @@ class UniversalTalonFX(
     private val logConfig: MotorLogConfig = MotorLogConfig()
 ) {
     init {
-        allMotors[subsystem] = this
         allMotorsFromPorts[port] = this
     }
 
