@@ -2,7 +2,7 @@ package frc.robot.lib.unit_test
 
 /** State owned by a subsystem that must be cleared between simulation tests. */
 /**
- * not needed for most subsystems but the once with periodic motor control can
+ * not needed for most subsystems but the ones with periodic motor control can
  * cause problems
  */
 interface SimulationResettable {
