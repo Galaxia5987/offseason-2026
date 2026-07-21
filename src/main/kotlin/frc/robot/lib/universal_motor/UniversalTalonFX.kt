@@ -46,9 +46,11 @@ class UniversalTalonFX(
     private val logConfig: MotorLogConfig = MotorLogConfig()
 ) {
     init {
-        allMotorsFromPorts
-            .getOrPut(port to canbus.name) { mutableListOf() }
-            .add(this)
+        if (CURRENT_MODE == Mode.SIM) {
+            allMotorsFromPorts
+                .getOrPut(port to canbus.name) { mutableListOf() }
+                .add(this)
+        }
     }
 
     private val motorIO: MotorIO =
