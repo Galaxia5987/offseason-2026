@@ -36,6 +36,21 @@ object Extender : SubsystemBase(), SimulationResettable {
                     controlRequest = true
                 )
         )
+    private val motor1 =
+        UniversalTalonFX(
+            port = PORT,
+            config = CONFIG,
+            simGains = SIM_GAINS,
+            gearRatio = GEAR_RATIO,
+            linearSystemWheelDiameter = DIAMETER,
+            logConfig =
+                MotorLogConfig(
+                    current = false,
+                    velocity = false,
+                    absoluteEncoder = false,
+                    controlRequest = true
+                )
+        )
 
     private val positionRequest = PositionVoltage(0.0)
     private val voltageRequest = VoltageOut(0.0)

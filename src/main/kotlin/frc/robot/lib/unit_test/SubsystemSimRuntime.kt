@@ -11,12 +11,18 @@ import frc.robot.lib.extensions.sec
 import frc.robot.lib.universal_motor.LoggedMotorInputs
 import frc.robot.lib.universal_motor.UniversalTalonFX
 import kotlin.test.AfterTest
+import kotlin.test.assertTrue
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.DisplayName
+import org.junit.jupiter.api.TestInstance
 
 private const val PERIODIC_TIME: Double = 0.02
 
-val allMotorsFromPorts = hashMapOf<Int, UniversalTalonFX>()
+val allMotorsFromPorts =
+    hashMapOf<Pair<Int, String>, MutableList<UniversalTalonFX>>()
 
-fun getInputs(port: Int): LoggedMotorInputs = allMotorsFromPorts[port]!!.inputs
+fun getInputs(port: Int, rio: String = "rio"): LoggedMotorInputs =
+    allMotorsFromPorts[port to rio]!!.first().inputs
 
 object SubsystemSimRuntime {
     val scheduler: CommandScheduler = CommandScheduler.getInstance()
@@ -67,11 +73,22 @@ object SubsystemSimRuntime {
     fun restartInputs() {
         reset()
         resetRegisteredSimulationState()
-        allMotorsFromPorts.values.distinct().forEach { it.resetInputs() }
+        allMotorsFromPorts.values.flatten().distinct().forEach {
+            it.resetInputs()
+        }
     }
 }
 
-open class Tests {
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+abstract class Tests {
+
+    @AfterAll
+    @DisplayName("check duplicate motors")
+    fun `check duplicate motors`() {
+        val duplicates = allMotorsFromPorts.filterValues { it.size > 1 }
+        assertTrue(duplicates.isEmpty(), "Duplicate motor CAN IDs")
+    }
+
     @AfterTest
     fun `clean inputs`() {
         SubsystemSimRuntime.restartInputs()
