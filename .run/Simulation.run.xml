@@ -10,8 +10,6 @@
       </option>
       <option name="taskNames">
         <list>
-          <option value="spotlessApply" />
-          <option value="build" />
           <option value="simulateJava" />
         </list>
       </option>
