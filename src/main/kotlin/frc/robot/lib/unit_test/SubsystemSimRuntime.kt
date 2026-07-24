@@ -14,8 +14,7 @@ import org.junit.jupiter.api.AfterEach
 
 private const val PERIODIC_TIME: Double = 0.02
 
-val allMotorsFromPorts =
-    hashMapOf<Pair<Int, String>, UniversalTalonFX>()
+val allMotorsFromPorts = hashMapOf<Pair<Int, String>, UniversalTalonFX>()
 
 fun getInputs(port: Int, canbus: String = "rio"): LoggedMotorInputs =
     allMotorsFromPorts[port to canbus]!!.inputs
@@ -76,9 +75,7 @@ object SubsystemSimRuntime {
     fun restartInputs() {
         reset()
         resetRegisteredSimulationState()
-        allMotorsFromPorts.values.distinct().forEach {
-            it.resetInputs()
-        }
+        allMotorsFromPorts.values.distinct().forEach { it.resetInputs() }
     }
 }
 
