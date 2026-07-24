@@ -93,7 +93,7 @@ class LoggedProcessor(private val codeGenerator: CodeGenerator, private val logg
             .addImport("frc.robot.lib", "get")
             .indent("    ")
             .build()
-        file.writeTo(codeGenerator, Dependencies(false, classDeclaration.containingFile!!))
+        file.writeTo(codeGenerator, Dependencies(true, classDeclaration.containingFile!!))
     }
 }
 
