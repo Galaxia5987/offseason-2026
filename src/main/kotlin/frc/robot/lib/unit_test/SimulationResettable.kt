@@ -9,12 +9,12 @@ interface SimulationResettable {
     fun resetSimulationState()
 }
 
-private val simulationResettables = linkedSetOf<SimulationResettable>()
+private val simulationResettables = hashSetOf<SimulationResettable>()
 
 fun registerSimulationResettable(resettable: SimulationResettable) {
     simulationResettables += resettable
 }
 
-internal fun resetRegisteredSimulationState() {
+fun resetRegisteredSimulationState() {
     simulationResettables.forEach { it.resetSimulationState() }
 }

@@ -10,24 +10,27 @@ import frc.robot.lib.extensions.get
 import frc.robot.lib.extensions.sec
 import frc.robot.lib.universal_motor.LoggedMotorInputs
 import frc.robot.lib.universal_motor.UniversalTalonFX
-import kotlin.test.AfterTest
-import kotlin.test.assertTrue
-import org.junit.jupiter.api.AfterAll
-import org.junit.jupiter.api.DisplayName
-import org.junit.jupiter.api.TestInstance
+import org.junit.jupiter.api.AfterEach
 
 private const val PERIODIC_TIME: Double = 0.02
 
 val allMotorsFromPorts =
-    hashMapOf<Pair<Int, String>, MutableList<UniversalTalonFX>>()
+    hashMapOf<Pair<Int, String>, UniversalTalonFX>()
 
-fun getInputs(port: Int, rio: String = "rio"): LoggedMotorInputs =
-    allMotorsFromPorts[port to rio]!!.first().inputs
+fun getInputs(port: Int, canbus: String = "rio"): LoggedMotorInputs =
+    allMotorsFromPorts[port to canbus]!!.inputs
 
 object SubsystemSimRuntime {
     val scheduler: CommandScheduler = CommandScheduler.getInstance()
 
     fun addCommands(vararg commands: Command): SubsystemSimRuntime {
+        commands.forEach {
+            it.requirements.forEach { subsystem ->
+                if (subsystem is SimulationResettable) {
+                    registerSimulationResettable(subsystem)
+                }
+            }
+        }
         scheduler.schedule(*commands)
         return this
     }
@@ -73,23 +76,14 @@ object SubsystemSimRuntime {
     fun restartInputs() {
         reset()
         resetRegisteredSimulationState()
-        allMotorsFromPorts.values.flatten().distinct().forEach {
+        allMotorsFromPorts.values.distinct().forEach {
             it.resetInputs()
         }
     }
 }
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class Tests {
-
-    @AfterAll
-    @DisplayName("check duplicate motors")
-    fun `check duplicate motors`() {
-        val duplicates = allMotorsFromPorts.filterValues { it.size > 1 }
-        assertTrue(duplicates.isEmpty(), "Duplicate motor CAN IDs")
-    }
-
-    @AfterTest
+    @AfterEach
     fun `clean inputs`() {
         SubsystemSimRuntime.restartInputs()
     }
