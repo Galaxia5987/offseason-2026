@@ -9,10 +9,15 @@ import edu.wpi.first.units.measure.Distance
 import edu.wpi.first.units.measure.MomentOfInertia
 import edu.wpi.first.wpilibj.Timer
 import frc.robot.lib.Gains
+import frc.robot.lib.extensions.amps
+import frc.robot.lib.extensions.deg
 import frc.robot.lib.extensions.get
 import frc.robot.lib.extensions.kg2m
+import frc.robot.lib.extensions.m
 import frc.robot.lib.extensions.rot
+import frc.robot.lib.extensions.rps
 import frc.robot.lib.extensions.toDistance
+import frc.robot.lib.extensions.volts
 import frc.robot.lib.motors.TalonFXSim
 import frc.robot.lib.motors.TalonType
 
@@ -74,6 +79,18 @@ class MotorIOSim(
         }
 
         motor.setControl(controlRequest)
+    }
+
+    override fun resetInputs() {
+        motor.resetInputs()
+        inputs.position = 0.deg
+        inputs.distance = 0.m
+        inputs.velocity = 0.rps
+        inputs.voltage = 0.volts
+        inputs.current = 0.amps
+        inputs.statorCurrent = 0.amps
+        inputs.absoluteEncoderPositionNoOffset = 0.deg
+        inputs.controlModeValue = 0
     }
 
     override fun updateInputs() {

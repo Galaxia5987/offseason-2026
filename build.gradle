@@ -126,6 +126,8 @@ dependencies {
 
     implementation project(':annotation')
     ksp project(':annotation')
+    compileOnly "org.junit.jupiter:junit-jupiter-api:5.10.1"
+    compileOnly "org.jetbrains.kotlin:kotlin-test-junit5:2.0.0"
 
     testImplementation platform("org.junit:junit-bom:5.10.1")
     testImplementation "org.junit.jupiter:junit-jupiter-api"
@@ -136,7 +138,14 @@ dependencies {
 
     def akitJson = new groovy.json.JsonSlurper().parseText(new File(projectDir.getAbsolutePath() + "/vendordeps/AdvantageKit.json").text)
     kapt "org.littletonrobotics.akit:akit-autolog:$akitJson.version"
-    testImplementation "org.jetbrains.kotlin:kotlin-test:2.0.0"
+    testImplementation "org.jetbrains.kotlin:kotlin-test-junit5:2.0.0"
+}
+
+tasks.withType(Test).configureEach {
+    testLogging {
+        events "passed", "failed", "skipped"
+        exceptionFormat "full"
+    }
 }
 
 sourceSets {
@@ -160,8 +169,12 @@ sourceSets {
 
 test {
     useJUnitPlatform()
+    testClassesDirs += sourceSets.main.output.classesDirs
     systemProperty 'junit.jupiter.extensions.autodetection.enabled', 'true'
 }
+
+def subsystemSimNativeDir = layout.buildDirectory.dir("jni/release")
+
 
 // Simulation configuration (e.g. environment variables).
 //
@@ -196,19 +209,18 @@ tasks.withType(JavaCompile) {
 project.compileKotlin.dependsOn(createVersionFile)
 project.compileJava.dependsOn(createVersionFile)
 gversion {
-    srcDir       = "src/main/kotlin/"
+    srcDir = "src/main/kotlin/"
     classPackage = "frc.robot"
-    className    = "BuildConstants"
-    dateFormat   = "yyyy-MM-dd HH:mm z"
-    timeZone     = "Asia/Jerusalem"
-    indent       = "  "
+    className = "BuildConstants"
+    dateFormat = "yyyy-MM-dd HH:mm z"
+    timeZone = "Asia/Jerusalem"
+    indent = "  "
 }
 
 tasks.withType(JavaCompile).configureEach {
     // Configure string concat to always inline compile
     options.compilerArgs.add '-XDstringConcat=inline'
 }
-
 
 
 kotlin {

@@ -1,7 +1,6 @@
 package frc.robot.lib.motors;
 
 import com.ctre.phoenix6.controls.*;
-import com.ctre.phoenix6.controls.compound.*;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N2;
 import edu.wpi.first.math.system.LinearSystem;
@@ -13,7 +12,6 @@ import edu.wpi.first.units.measure.Voltage;
 import frc.robot.lib.math.differential.Derivative;
 
 public class TalonFXSim extends SimMotor {
-
     private final Derivative acceleration = new Derivative();
 
     public TalonFXSim(
@@ -191,5 +189,15 @@ public class TalonFXSim extends SimMotor {
 
     public Voltage getAppliedVoltage() {
         return Units.Volts.of(motorSim.getInputVoltage());
+    }
+
+    public void resetInputs() {
+        voltageRequest = MotorSetpoint.simpleVoltage(0);
+        if (controller != null) controller.reset();
+        if (profiledController != null) profiledController.reset(0);
+
+        motorSim.setAngularVelocity(0);
+        motorSim.setAngle(0);
+        motorSim.setInputVoltage(0);
     }
 }
