@@ -47,9 +47,7 @@ class UniversalTalonFX(
 ) {
     init {
         if (CURRENT_MODE == Mode.SIM) {
-            allMotorsFromPorts
-                .getOrPut(port to canbus.name) { mutableListOf() }
-                .add(this)
+            allMotorsFromPorts[port to canbus.name] = this
         }
     }
 
