@@ -6,6 +6,7 @@ import edu.wpi.first.units.measure.*
 import frc.robot.lib.getRotation3d
 import frc.robot.lib.getTranslation3d
 import kotlin.math.PI
+import kotlin.math.hypot
 
 /**
  * # Unit DSL Extensions for WPILib
@@ -43,6 +44,31 @@ import kotlin.math.PI
  * These extensions allow for natural and concise code in robot control logic.
  */
 
+data class LinearAcceleration2d(
+    val x: LinearAcceleration,
+    val y: LinearAcceleration
+) {
+    val magnitude: LinearAcceleration
+        get() = Units.MetersPerSecondPerSecond.of(
+            hypot(
+                x.`in`(Units.MetersPerSecondPerSecond),
+                y.`in`(Units.MetersPerSecondPerSecond)
+            )
+        )
+
+    operator fun minus(other: LinearAcceleration2d) =
+        LinearAcceleration2d(
+            x.minus(other.x),
+            y.minus(other.y)
+        )
+
+    companion object {
+        val ZERO = LinearAcceleration2d(
+            Units.MetersPerSecondPerSecond.zero(),
+            Units.MetersPerSecondPerSecond.zero()
+        )
+    }
+}
 // Length
 val m
     get() = Units.Meters
@@ -215,6 +241,8 @@ val Number.rps_squared: AngularAcceleration
 // Other
 val Number.sec: Time
     get() = toUnit(Units.Seconds::of)
+val Number.ms: Time
+    get() = toUnit(Units.Millisecond::of)
 val Number.seconds: Time
     get() = toUnit(Units.Seconds::of)
 val Number.min: Time

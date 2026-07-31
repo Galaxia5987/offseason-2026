@@ -18,13 +18,13 @@ import edu.wpi.first.math.geometry.Pose3d
 import edu.wpi.first.wpilibj.Alert
 import edu.wpi.first.wpilibj.Alert.AlertType
 import edu.wpi.first.wpilibj2.command.SubsystemBase
-import frc.robot.lib.BetterPoseEstimator
+import frc.robot.lib.VisionObservation
 import frc.robot.subsystems.vision.VisionIO.PoseObservation
 import kotlin.math.absoluteValue
 import org.littletonrobotics.junction.Logger
 
 open class Vision(
-    private val consumer: (BetterPoseEstimator.VisionObservation) -> Unit,
+    private val poseEstimator: (VisionObservation) -> Unit,
     private val resetOdometryCallback: (Pose2d) -> Unit,
     private vararg val ios: VisionIO
 ) : SubsystemBase() {
@@ -91,7 +91,7 @@ open class Vision(
 
             // Pass raw primitives, avoiding VecBuilder.fill() matrix allocations
             val observation =
-                BetterPoseEstimator.VisionObservation(
+                VisionObservation(
                     estimatedPose.pose,
                     estimatedPose.timestamp,
                     linearStdDev,
@@ -106,7 +106,7 @@ open class Vision(
                 lastOdometryResetTimeStamp = estimatedPose.timestamp
                 resetOdometryCallback.invoke(estimatedPose.pose.toPose2d())
             }
-            consumer.invoke(observation)
+            poseEstimator(observation)
         }
 
         if (invalidPosesCount == 0) {
